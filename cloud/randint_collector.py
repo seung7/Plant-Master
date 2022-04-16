@@ -16,7 +16,7 @@ PORT = 8883
 # Hardcode these for now
 ROOT_CA_PATH = '/home/pi/certs/Amazon-root-CA-1.pem'
 PRIVATE_KEY_PATH = '/home/pi/certs/private.pem.key'
-CERT_PATH = '/home/pi/certs/certificate.pem.cert'
+CERT_PATH = '/home/pi/certs/certificate.pem.crt'
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
