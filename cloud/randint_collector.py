@@ -33,7 +33,7 @@ def shadow_callback_update(payload, response_status, token):
     if response_status == 'rejected':
         logger.info(f'Update request {token} rejected!')
 
-def shadow_callback_delete(responseStatus, token):
+def shadow_callback_delete(payload, responseStatus, token):
     """Function called when a shadow is deleted.
     Display status and data from delete request"""
     if responseStatus == "timeout":
@@ -50,7 +50,6 @@ def shadow_callback_delete(responseStatus, token):
 def init_mqtt_shadow_client(client_id, host, port,
     root_ca_path, private_key_path, cert_path):
     # Init AWSIoTMQTTShadowClient
-    mqtt_shadow_client = None
     mqtt_shadow_client = AWSIoTMQTTShadowClient(client_id)
     mqtt_shadow_client.configureEndpoint(host, port)
     mqtt_shadow_client.configureCredentials(root_ca_path, private_key_path, cert_path)
@@ -85,10 +84,12 @@ if __name__ == '__main__':
 
     logger.info('initializing mqtt shadow client...')
     shadow_client = init_mqtt_shadow_client(
-        config['AWS'].get('client_id'), config['AWS'].get('endpoint'), config['AWS'].get('port'),
+        config['AWS'].get('client_id'), config['AWS'].get('endpoint'),
+        int(config['AWS'].get('port')),
         config['AWS'].get('root_ca_path'), config['AWS'].get('key_path'),
         config['AWS'].get('cert_path')
     )
+
     logger.info('initializing shadow handler...')
     shadow_handler = create_shadow_handler(shadow_client, 'test-pi')
 
@@ -103,6 +104,7 @@ if __name__ == '__main__':
                 }
             }
         }
+
         # Update shadow
         shadow_handler.shadowUpdate(json.dumps(payload), shadow_callback_update, 5)
         time.sleep(5)
