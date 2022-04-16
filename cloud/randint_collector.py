@@ -1,22 +1,12 @@
+from configparser import ConfigParser
 import logging
 import json
-import os
 from random import randint
 import time
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient
-from dotenv import load_dotenv
 
 
-load_dotenv()
-
-CLIENT_ID = 'test-pi'
-THING_NAME = 'test-pi'
-HOST = os.getenv('HOST')
-PORT = 8883
-# Hardcode these for now
-ROOT_CA_PATH = '/home/pi/certs/Amazon-root-CA-1.pem'
-PRIVATE_KEY_PATH = '/home/pi/certs/private.pem.key'
-CERT_PATH = '/home/pi/certs/certificate.pem.crt'
+CONFIG_FILE = '/etc/rtu/plant_master.conf'
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -24,6 +14,7 @@ streamHandler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s: %(message)s')
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
+
 
 def shadow_callback_update(payload, response_status, token):
     """Function called when a shadow is updated.
@@ -42,7 +33,7 @@ def shadow_callback_update(payload, response_status, token):
     if response_status == 'rejected':
         logger.info(f'Update request {token} rejected!')
 
-def shadow_callback_delete(payload, responseStatus, token):
+def shadow_callback_delete(responseStatus, token):
     """Function called when a shadow is deleted.
     Display status and data from delete request"""
     if responseStatus == "timeout":
@@ -82,17 +73,28 @@ def create_shadow_handler(mqtt_shadow_client, thing_name):
     shadow_handler.shadowDelete(shadow_callback_delete, 5)
     return shadow_handler
 
+def get_config():
+    config = ConfigParser()
+    config.read(CONFIG_FILE)
+
+    return config
+
 if __name__ == '__main__':
+    logger.info('getting config...')
+    config = get_config()
+
     logger.info('initializing mqtt shadow client...')
     shadow_client = init_mqtt_shadow_client(
-        CLIENT_ID, HOST, PORT, ROOT_CA_PATH, PRIVATE_KEY_PATH, CERT_PATH
+        config['AWS'].get('client_id'), config['AWS'].get('endpoint'), config['AWS'].get('port'),
+        config['AWS'].get('root_ca_path'), config['AWS'].get('key_path'),
+        config['AWS'].get('cert_path')
     )
     logger.info('initializing shadow handler...')
     shadow_handler = create_shadow_handler(shadow_client, 'test-pi')
 
     while True:
         rand_int = randint(1, 100)
-        
+
         # Create message payload
         payload = {
             'state': {
