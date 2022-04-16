@@ -25,36 +25,36 @@ formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s: %(message)s')
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
-# Function called when a shadow is updated
-def customShadowCallback_Update(payload, response_status, token):
-    """Display status and data from update request"""
+def shadow_callback_update(payload, response_status, token):
+    """Function called when a shadow is updated.
+    Display status and data from update request"""
     if response_status == 'timeout':
-        print(f'Update request {token} timeout!')
-        print("Update request " + token + " time out!")
+        logger.info(f'Update request {token} timeout!')
+        logger.info("Update request " + token + " time out!")
 
     if response_status == 'accepted':
         payload_dict = json.loads(payload)
-        print('~~~~~~~~~~~~~~~~~~~~~~~')
-        print(f'Update request with token: {token} accepted!')
-        print('num: ' + str(payload_dict['state']['reported']['num']))
-        print('~~~~~~~~~~~~~~~~~~~~~~~\n\n')
+        logger.info('~~~~~~~~~~~~~~~~~~~~~~~')
+        logger.info(f'Update request with token: {token} accepted!')
+        logger.info(f'num: {str(payload_dict["state"]["reported"]["num"])}')
+        logger.info('~~~~~~~~~~~~~~~~~~~~~~~\n\n')
 
     if response_status == 'rejected':
-        print(f'Update request {token} rejected!')
+        logger.info(f'Update request {token} rejected!')
 
-# Function called when a shadow is deleted
-def customShadowCallback_Delete(payload, responseStatus, token):
-    """Display status and data from delete request"""
+def shadow_callback_delete(payload, responseStatus, token):
+    """Function called when a shadow is deleted.
+    Display status and data from delete request"""
     if responseStatus == "timeout":
-        print(f'Delete request {token} time out!')
+        logger.info(f'Delete request {token} time out!')
 
     if responseStatus == 'accepted':
-        print('~~~~~~~~~~~~~~~~~~~~~~~')
-        print(f'Delete request with token: {token} accepted!')
-        print('~~~~~~~~~~~~~~~~~~~~~~~\n\n')
+        logger.info('~~~~~~~~~~~~~~~~~~~~~~~')
+        logger.info(f'Delete request with token: {token} accepted!')
+        logger.info('~~~~~~~~~~~~~~~~~~~~~~~\n\n')
 
     if responseStatus == 'rejected':
-        print(f'Delete request {token} rejected!')
+        logger.info(f'Delete request {token} rejected!')
 
 def init_mqtt_shadow_client(client_id, host, port,
     root_ca_path, private_key_path, cert_path):
@@ -79,7 +79,7 @@ def create_shadow_handler(mqtt_shadow_client, thing_name):
     shadow_handler = mqtt_shadow_client.createShadowHandlerWithName(
         thing_name, True)
     # Delete current shadow JSON doc
-    shadow_handler.shadowDelete(customShadowCallback_Delete, 5)
+    shadow_handler.shadowDelete(shadow_callback_delete, 5)
     return shadow_handler
 
 if __name__ == '__main__':
@@ -92,9 +92,6 @@ if __name__ == '__main__':
 
     while True:
         rand_int = randint(1, 100)
-
-        # Display readings:
-        logger.info(f'num: {rand_int}')
         
         # Create message payload
         payload = {
@@ -105,5 +102,5 @@ if __name__ == '__main__':
             }
         }
         # Update shadow
-        shadow_handler.shadowUpdate(json.dumps(payload), customShadowCallback_Update, 5)
+        shadow_handler.shadowUpdate(json.dumps(payload), shadow_callback_update, 5)
         time.sleep(5)
